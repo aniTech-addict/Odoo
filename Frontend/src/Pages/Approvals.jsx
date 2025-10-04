@@ -215,13 +215,29 @@ export default function Approvals() {
                     </div>
                     
                     {/* Footer / Pagination */}
-                    <footer className="flex justify-between items-center p-4 bg-slate-50/50 border-t border-slate-200">
-                         <span className="text-sm text-slate-500">Showing 1 to 5 of 20 results</span>
-                         <div className="flex items-center gap-2">
-                            <button className="px-3 py-1 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-100">Previous</button>
-                            <button className="px-3 py-1 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-100">Next</button>
-                         </div>
-                    </footer>
+                    {!isLoading && approvals.length > 0 && (
+                        <footer className="flex justify-between items-center p-4 bg-slate-50/50 border-t border-slate-200">
+                            <span className="text-sm text-slate-500">
+                                Showing {((pagination.currentPage - 1) * 10) + 1} to {Math.min(pagination.currentPage * 10, pagination.totalApprovals)} of {pagination.totalApprovals} results
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={!pagination.hasPrevPage}
+                                    className="px-3 py-1 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.totalPages))}
+                                    disabled={!pagination.hasNextPage}
+                                    className="px-3 py-1 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </footer>
+                    )}
                 </main>
             </div>
         </div>

@@ -67,10 +67,10 @@ function verifyToken(token) {
 // --- CONTROLLER FOR CREATING A NEW USER ---
 
 export const createUser = async (req, res) => {
-    const { username, email, role } = req.body;
+    const { username, firstName, lastName, email, phone, location, role } = req.body;
 
-    if (!username || !email) {
-        return res.status(400).json({ message: 'Username and email are required.' });
+    if (!username || !email || !firstName || !lastName) {
+        return res.status(400).json({ message: 'Username, email, first name, and last name are required.' });
     }
 
     try {
@@ -80,9 +80,13 @@ export const createUser = async (req, res) => {
         // Step 2: Create a new user instance
         const newUser = new User({
             username,
+            firstName,
+            lastName,
             email,
+            phone,
+            location,
             password: randomPassword, // Pass the plain password here. Hashing happens on save.
-            role 
+            role
         });
 
         // Step 3: Save the user to the database
@@ -93,12 +97,16 @@ export const createUser = async (req, res) => {
         await sendPasswordByEmail(email, randomPassword);
 
         // Don't send the password back in the response!
-        res.status(201).json({ 
+        res.status(201).json({
             message: 'User created successfully! A temporary password has been sent to the email.',
             user: {
                 id: newUser._id,
                 username: newUser.username,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
                 email: newUser.email,
+                phone: newUser.phone,
+                location: newUser.location,
                 role: newUser.role
             }
         });

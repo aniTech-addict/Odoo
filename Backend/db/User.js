@@ -10,6 +10,16 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true // Removes whitespace from both ends
     },
+    firstName: {
+        type: String,
+        required: [true, 'First name is required'],
+        trim: true
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Last name is required'],
+        trim: true
+    },
     email: {
         type: String,
         required: [true, 'Email is required'],
@@ -17,6 +27,14 @@ const userSchema = new mongoose.Schema({
         lowercase: true, // Always store email in lowercase
         trim: true,
         match: [/\S+@\S+\.\S+/, 'Please use a valid email address']
+    },
+    phone: {
+        type: String,
+        trim: true
+    },
+    location: {
+        type: String,
+        trim: true
     },
     password: {
         type: String,

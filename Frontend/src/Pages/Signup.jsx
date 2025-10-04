@@ -63,10 +63,12 @@ const Signup = () => {
     try {
       const result = await register({
         username: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        location: formData.location.trim(),
         password: formData.password,
-        // Note: The backend doesn't handle firstName, lastName, phone, location yet
-        // These would need to be added to the User model if needed
       });
 
       if (result.success) {

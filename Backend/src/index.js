@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import {DB_NAME} from "./constants.js";
 
 import express from "express"
+import cors from "cors"
 const app = express()
 
 // Validate required environment variables
@@ -17,7 +18,21 @@ if (missingEnvVars.length > 0) {
     process.exit(1);
 }
 
+// CORS configuration
+const corsOptions = {
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5173', // Vite dev server alternative port
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Basic Express middleware
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -45,7 +60,7 @@ app.get('/health', (req, res) => {
 });
 
 // 404 handler - must be last
-app.use('*', (req, res) => {
+app.use((req, res) => {
     res.status(404).json({ message: 'Endpoint not found' });
 });
 
