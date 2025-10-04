@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 // --- Helper Components (for cleaner code) ---
 
@@ -16,6 +19,18 @@ const ChevronDownIcon = () => (
     </svg>
 );
 
+const CheckIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-1">
+        <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+);
+
+const XIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-1">
+        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+);
+
 // Component for the status pills
 const StatusPill = ({ status }) => {
     const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block";
@@ -27,17 +42,66 @@ const StatusPill = ({ status }) => {
     return <span className={`${baseClasses} ${statusClasses[status] || 'bg-gray-100 text-gray-800'}`}>{status}</span>;
 };
 
-// --- Main App Component ---
+// --- Main Component ---
 
-export default function App() {
-    // Dummy data to populate the approvals table
-    const [approvals] = useState([
-        { id: 1, subject: 'Office Supplies Q4', owner: 'Sarah Johnson', category: 'Office Mgmt', status: 'Approved', amount: 567.00, currency: 'USD' },
-        { id: 2, subject: 'Marketing Campaign Launch', owner: 'Alex Rodriguez', category: 'Marketing', status: 'Pending', amount: 1250.50, currency: 'USD' },
-        { id: 3, subject: 'Client Dinner at "The Grill"', owner: 'Emily White', category: 'Food', status: 'Pending', amount: 320.75, currency: 'USD' },
-        { id: 4, subject: 'Software License Renewal', owner: 'David Chen', category: 'IT', status: 'Rejected', amount: 899.00, currency: 'USD' },
-        { id: 5, subject: 'Team Offsite Event', owner: 'Michael Brown', category: 'Team Building', status: 'Approved', amount: 2400.00, currency: 'USD' },
-    ]);
+export default function Approvals() {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
+    // State for approvals data
+    const [approvals, setApprovals] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pagination, setPagination] = useState({});
+    const [actionLoading, setActionLoading] = useState(null);
+    const [error, setError] = useState('');
+
+    // Load approvals data
+    useEffect(() => {
+        loadApprovals();
+    }, [currentPage]);
+
+    const loadApprovals = async () => {
+        try {
+            setIsLoading(true);
+            setError('');
+
+            const params = {
+                page: currentPage,
+                limit: 10
+            };
+
+            const response = await apiService.approvals.getPending(params);
+            setApprovals(response.approvals || []);
+            setPagination(response.pagination || {});
+        } catch (error) {
+            console.error('Failed to load approvals:', error);
+            setError('Failed to load approvals. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleApprovalAction = async (approvalId, action, comments = '') => {
+        try {
+            setActionLoading(approvalId);
+
+            if (action === 'approve') {
+                await apiService.approvals.approve(approvalId, comments);
+            } else if (action === 'reject') {
+                await apiService.approvals.reject(approvalId, comments);
+            }
+
+            // Reload approvals after action
+            await loadApprovals();
+            alert(`Expense ${action}d successfully!`);
+        } catch (error) {
+            console.error(`Failed to ${action} approval:`, error);
+            alert(`Failed to ${action} expense. Please try again.`);
+        } finally {
+            setActionLoading(null);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#FFFBEB] font-sans text-slate-800 p-4 sm:p-6 lg:p-8">
@@ -68,30 +132,84 @@ export default function App() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {approvals.map((item) => (
-                                    <tr key={item.id} className="bg-white border-b border-slate-200/80 hover:bg-slate-50/70 transition-colors duration-150">
-                                        <td className="px-6 py-4 font-semibold text-slate-900 whitespace-nowrap">{item.subject}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.owner}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{item.category}</td>
-                                        <td className="px-6 py-4">
-                                            <StatusPill status={item.status} />
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-medium text-slate-900 whitespace-nowrap">
-                                            {item.amount.toFixed(2)}
-                                            <span className="ml-1 text-xs text-slate-400">({item.currency})</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button className="font-bold text-white bg-yellow-500 hover:bg-yellow-600 rounded-lg px-4 py-2 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400">
-                                                    Approve
-                                                </button>
-                                                <button className="font-bold text-white bg-slate-500 hover:bg-slate-600 rounded-lg px-4 py-2 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400">
-                                                    Reject
-                                                </button>
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan="6" className="px-6 py-8 text-center">
+                                            <div className="flex items-center justify-center">
+                                                <div className="w-6 h-6 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-3"></div>
+                                                <span className="text-slate-600">Loading approvals...</span>
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
+                                ) : approvals.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6" className="px-6 py-8 text-center">
+                                            <div className="text-slate-500">
+                                                <p className="text-lg mb-2">No pending approvals</p>
+                                                <p className="text-sm">All caught up! 🎉</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    approvals.map((approval) => (
+                                        <tr key={approval._id} className="bg-white border-b border-slate-200/80 hover:bg-slate-50/70 transition-colors duration-150">
+                                            <td className="px-6 py-4 font-semibold text-slate-900 whitespace-nowrap">
+                                                {approval.expense?.subject || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {approval.requestedBy?.username || 'Unknown'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {approval.expense?.category?.name || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <StatusPill status="Pending" />
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-medium text-slate-900 whitespace-nowrap">
+                                                {approval.expense?.amount ? (
+                                                    <>
+                                                        {approval.expense.amount.toFixed(2)}
+                                                        <span className="ml-1 text-xs text-slate-400">
+                                                            ({approval.expense.currency || 'USD'})
+                                                        </span>
+                                                    </>
+                                                ) : 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => handleApprovalAction(approval._id, 'approve')}
+                                                        disabled={actionLoading === approval._id}
+                                                        className="font-bold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 rounded-lg px-3 py-2 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400"
+                                                    >
+                                                        {actionLoading === approval._id ? (
+                                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                        ) : (
+                                                            <>
+                                                                <CheckIcon />
+                                                                Approve
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleApprovalAction(approval._id, 'reject')}
+                                                        disabled={actionLoading === approval._id}
+                                                        className="font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 rounded-lg px-3 py-2 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400"
+                                                    >
+                                                        {actionLoading === approval._id ? (
+                                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                        ) : (
+                                                            <>
+                                                                <XIcon />
+                                                                Reject
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>

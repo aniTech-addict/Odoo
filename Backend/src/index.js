@@ -44,9 +44,9 @@ app.get('/health', (req, res) => {
     });
 });
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-    res.status(404).json({ message: 'API endpoint not found' });
+// 404 handler - must be last
+app.use('*', (req, res) => {
+    res.status(404).json({ message: 'Endpoint not found' });
 });
 
 // Handle Express app errors
