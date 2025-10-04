@@ -1,55 +1,90 @@
 import './App.css'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 
-import React, { useState } from 'react'
+// Import existing pages
 import CareerGuidanceLanding from './Pages/CareerGuidanceLanding'
 import Login from './Pages/Login'
 import Signup from './Pages/Signup'
+import Approvals from './Pages/Approvals'
+import UserManagement from './Pages/UserManagement'
+
+// Import new expense management pages (to be created)
+import Dashboard from './Pages/Dashboard'
+import ExpenseList from './Pages/ExpenseList'
+import ExpenseForm from './Pages/ExpenseForm'
+import CategoryManagement from './Pages/CategoryManagement'
+import Profile from './Pages/Profile'
 
 const App = () => {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'login', 'signup'
-
-  const renderPage = () => {
-    switch(currentPage) {
-      case 'login':
-        return <Login onNavigate={setCurrentPage} />
-      case 'signup':
-        return <Signup onNavigate={setCurrentPage} />
-      default:
-        return <CareerGuidanceLanding onNavigate={setCurrentPage} />
-    }
-  }
-
   return (
-    <>
-      {renderPage()}
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<CareerGuidanceLanding />} />
+            <Route path="/landing" element={<CareerGuidanceLanding />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
-      {/* Development Navigation Helper - Remove in production */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white border-2 border-gray-900 rounded-lg p-2 shadow-lg">
-          <div className="text-xs font-semibold mb-2 text-gray-900">Dev Navigation:</div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage('landing')}
-              className={`px-2 py-1 text-xs rounded ${currentPage === 'landing' ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              Landing
-            </button>
-            <button
-              onClick={() => setCurrentPage('login')}
-              className={`px-2 py-1 text-xs rounded ${currentPage === 'login' ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setCurrentPage('signup')}
-              className={`px-2 py-1 text-xs rounded ${currentPage === 'signup' ? 'bg-yellow-400 text-gray-900' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              Signup
-            </button>
-          </div>
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/expenses" element={
+              <ProtectedRoute>
+                <ExpenseList />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/expenses/new" element={
+              <ProtectedRoute>
+                <ExpenseForm />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/expenses/:id/edit" element={
+              <ProtectedRoute>
+                <ExpenseForm />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/approvals" element={
+              <ProtectedRoute>
+                <Approvals />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/categories" element={
+              <ProtectedRoute requiredRole="admin">
+                <CategoryManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/users" element={
+              <ProtectedRoute requiredRole="admin">
+                <UserManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+
+            {/* Catch all route - redirect to landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
-      )}
-    </>
+      </Router>
+    </AuthProvider>
   )
 }
 

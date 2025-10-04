@@ -1,31 +1,50 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, User } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-const Login = ({ onNavigate }) => {
+const Login = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Login attempt:', formData);
+    setError('');
+
+    try {
+      const result = await login(formData.email, formData.password);
+
+      if (result.success) {
+        navigate(from, { replace: true });
+      } else {
+        setError(result.error);
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
-      // Here you would typically handle the login logic
-    }, 1500);
+    }
   };
 
   return (
@@ -45,6 +64,11 @@ const Login = ({ onNavigate }) => {
 
         {/* Login Form */}
         <div className="bg-white rounded-3xl p-8 shadow-lg border-4 border-gray-900">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div className="space-y-2">
@@ -169,11 +193,22 @@ const Login = ({ onNavigate }) => {
               <button
                 type="button"
                 className="text-yellow-600 hover:text-yellow-700 font-semibold transition-colors duration-200"
-                onClick={() => onNavigate('signup')}
+                onClick={() => navigate('/signup')}
               >
                 Sign up here
               </button>
             </p>
+          </div>
+
+          {/* Forgot Password Link */}
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              className="text-yellow-600 hover:text-yellow-700 font-medium transition-colors duration-200 text-sm"
+              onClick={() => navigate('/forgot-password')}
+            >
+              Forgot your password?
+            </button>
           </div>
         </div>
       </div>

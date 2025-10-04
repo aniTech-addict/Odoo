@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Phone, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-const Signup = ({ onNavigate }) => {
+const Signup = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,6 +20,7 @@ const Signup = ({ onNavigate }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleInputChange = (e) => {
     setFormData({
@@ -48,17 +54,34 @@ const Signup = ({ onNavigate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Signup attempt:', formData);
+    setSuccessMessage('');
+
+    try {
+      const result = await register({
+        username: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim(),
+        password: formData.password,
+        // Note: The backend doesn't handle firstName, lastName, phone, location yet
+        // These would need to be added to the User model if needed
+      });
+
+      if (result.success) {
+        setSuccessMessage('Account created successfully! Please check your email for login credentials.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        setErrors({ general: result.error });
+      }
+    } catch (error) {
+      setErrors({ general: 'An unexpected error occurred. Please try again.' });
+    } finally {
       setIsLoading(false);
-      // Here you would typically handle the signup logic
-    }, 1500);
+    }
   };
 
   return (
@@ -78,6 +101,16 @@ const Signup = ({ onNavigate }) => {
 
         {/* Signup Form */}
         <div className="bg-white rounded-3xl p-8 shadow-lg border-4 border-gray-900">
+          {errors.general && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-700 text-sm">{errors.general}</p>
+            </div>
+          )}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-green-700 text-sm">{successMessage}</p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
@@ -320,7 +353,7 @@ const Signup = ({ onNavigate }) => {
               <button
                 type="button"
                 className="text-yellow-600 hover:text-yellow-700 font-semibold transition-colors duration-200"
-                onClick={() => onNavigate('login')}
+                onClick={() => navigate('/login')}
               >
                 Sign in here
               </button>

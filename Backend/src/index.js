@@ -9,7 +9,7 @@ import express from "express"
 const app = express()
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGODB_URL', 'PORT'];
+const requiredEnvVars = ['MONGODB_URL', 'PORT', 'JWT_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -18,8 +18,36 @@ if (missingEnvVars.length > 0) {
 }
 
 // Basic Express middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Import routes
+import authRoutes from "../routes/auth.js";
+import expenseRoutes from "../routes/expenses.js";
+import categoryRoutes from "../routes/categories.js";
+import approvalRoutes from "../routes/approvals.js";
+import userRoutes from "../routes/users.js";
+
+// API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/approvals', approvalRoutes);
+app.use('/api/users', userRoutes);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        message: 'Server is running',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ message: 'API endpoint not found' });
+});
 
 // Handle Express app errors
 app.on("error", (error) => {
