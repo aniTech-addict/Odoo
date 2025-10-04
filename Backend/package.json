@@ -6,9 +6,14 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon -r dotenv/config.js src/index.js --experimental-json-modules"
   },
   "keywords": [
+    "expense",
+    "tracker",
+    "express",
+    "node",
     "backend"
   ],
   "author": "Sanju Kumar",
